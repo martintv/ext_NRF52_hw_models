@@ -25,16 +25,16 @@
 #include "fake_timer.h"
 
 void nrf_hw_models_free_all(){
-  nrf_clock_clean_up();
-  nrf_rng_clean_up();
-  nrf_rtc_clean_up();
-  nrf_aes_ecb_clean_up();
-  nrf_aes_ccm_clean_up();
-  nrf_aar_clean_up();
+  //nrf_clock_clean_up();
+  //nrf_rng_clean_up();
+  //nrf_rtc_clean_up();
+  //nrf_aes_ecb_clean_up();
+  //nrf_aes_ccm_clean_up();
+  //nrf_aar_clean_up();
   nrf_radio_clean_up();
-  nrf_ficr_clean_up();
-  nrf_ppi_clean_up();
-  nrf_timer_clean_up();
+ // nrf_ficr_clean_up();
+ // nrf_ppi_clean_up();
+ // nrf_timer_clean_up();
 }
 
 /*
@@ -50,19 +50,19 @@ void nrf_hw_pre_init() {
  */
 void nrf_hw_initialize(nrf_hw_sub_args_t *args){
 
-  BLECrypt_if_enable_real_encryption(args->useRealAES);
+  //BLECrypt_if_enable_real_encryption(args->useRealAES);
   hw_irq_ctrl_init();
-  nrf_clock_init();
-  nrg_rng_init();
-  nrf_rtc_init();
-  nrf_aes_ecb_init();
-  nrf_aes_ccm_init();
-  nrf_aar_init();
+  //nrf_clock_init();
+  //nrg_rng_init();
+  //nrf_rtc_init();
+  //nrf_aes_ecb_init();
+  //nrf_aes_ccm_init();
+  //nrf_aar_init();
   nrf_radio_init();
-  nrf_ficr_init();
-  nrf_ppi_init();
+  //nrf_ficr_init();
+  //nrf_ppi_init();
   nrf_timer_init();
-  nrf_hw_find_next_timer_to_trigger();
+  //nrf_hw_find_next_timer_to_trigger();
 }
 
 extern bs_time_t Timer_event_fw_test_ticker;
@@ -82,6 +82,7 @@ extern bs_time_t Timer_RADIO_bitcounter;
 //The events priorities are as in this enum from top to bottom
 // (priority == which executes if they have the same timing)
 typedef enum {
+#if 0
   fake_timer,
   fw_test_ticker,
   irq_ctrl_timer,
@@ -91,6 +92,7 @@ typedef enum {
   CLOCK_LF_timer,
   CLOCK_HF_timer,
   RTC_timer,
+#endif  
   TIMER_timer,
   RADIO_timer,
   RADIO_bitcounter,
@@ -99,6 +101,7 @@ typedef enum {
   None
 } NRF_HW_next_timer_to_trigger_t;
 static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_timer_to_trigger_t
+#if 0
     &Timer_fake_timer,
     &Timer_event_fw_test_ticker,
     &Timer_irq_ctrl,
@@ -108,6 +111,7 @@ static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_tim
     &Timer_CLOCK_LF,
     &Timer_CLOCK_HF,
     &Timer_RTC,
+#endif
     &Timer_TIMERs,
     &Timer_RADIO,
     &Timer_RADIO_bitcounter,
@@ -140,6 +144,7 @@ void nrf_hw_find_next_timer_to_trigger(){
 void nrf_hw_some_timer_reached() {
 
   switch ( nrf_hw_next_timer_to_trigger ) {
+#if 0
   case fake_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: fake timer\n");
     fake_timer_triggered();
@@ -176,6 +181,7 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RTC timer\n");
     nrf_rtc_timer_triggered();
     break;
+#endif
   case TIMER_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: TIMERx timer\n");
     nrf_timer_timer_triggered();
@@ -193,7 +199,7 @@ void nrf_hw_some_timer_reached() {
     nrf_radio_timer_abort_reeval_triggered();
     break;
   default:
-    bs_trace_error_line("nrf_hw_next_timer_to_trigger corrupted\n");
+    //bs_trace_error_line("nrf_hw_next_timer_to_trigger corrupted\n");
     break;
   }
 }

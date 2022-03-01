@@ -64,9 +64,12 @@ void hwll_sync_time_with_phy(bs_time_t d_time) {
     return;
 
   pb_wait_t wait;
+	bs_trace_info_time_line(1, "1 %lu\n", d_time);
 
   if ( d_time != TIME_NEVER ){
+	  bs_trace_info_time_line(1, "1 \n");
     wait.end = hwll_phy_time_from_dev(d_time - 2);
+    bs_trace_info_time_line(1, "1 \n");
     //Wait for 2us less than the actual time, to allow for error with the
     //rounding of the clock drift + 1 us extra in case the next Tx or Rx
     //happens just in this same Time
@@ -76,7 +79,9 @@ void hwll_sync_time_with_phy(bs_time_t d_time) {
 
   if ( p2G4_dev_req_wait_nc_b(&wait) != 0){
     bs_trace_raw_manual_time(3, d_time, "The phy disconnected us\n");
+	  bs_trace_info_time_line(1, "1 %lu\n", d_time);
     hwll_disconnect_phy_and_exit();
+    bs_trace_info_time_line(1, "1 \n");    
   }
 }
 

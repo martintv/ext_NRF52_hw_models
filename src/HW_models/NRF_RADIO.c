@@ -755,6 +755,18 @@ static void Tx_abort_eval_respond(){
   handle_Tx_response(ret);
 }
 
+uint8_t* memory_on_moddeled_cpu;
+
+void bsim_NRF_RADIO_pointer_to_memory_of_cpu_core(uint8_t* ptr)
+{
+  memory_on_moddeled_cpu = ptr;
+}
+
+static uint8_t* get_64_bit_packet_ptr(void)
+{
+  return memory_on_moddeled_cpu + (NRF_RADIO_regs.PACKETPTR & 0x3FFFF);
+}
+
 static void start_Tx(){
   int S1Offset = 0;
   radio_state = TX;
@@ -810,11 +822,15 @@ static void start_Tx(){
     S1Offset = 1; /*1 byte offset in RAM (S1 length > 8 not supported)*/
   }
 
+  uint8_t * packet_ptr = get_64_bit_packet_ptr();
+  bs_trace_info_line(1, "Addr to send: %"PRId64"x payload: 0x%x 0x%x 0x%x 0x%x 0x%x \n", memory_on_moddeled_cpu, 
+  packet_ptr[0], packet_ptr[1], packet_ptr[2], packet_ptr[3], packet_ptr[4]);
+
   //TOLOW: Add support for other packet formats and bitrates
   uint8_t preamble_len;
   uint8_t address_len = 4;
   uint8_t header_len  = 2;
-  uint8_t payload_len = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[1];
+  uint8_t payload_len = ((uint8_t*)packet_ptr)[1];
   //Note: I assume in Tx the length is always < PCNF1.MAXLEN and that STATLEN is always 0 (otherwise add a check)
   uint8_t crc_len     = 3;
 
@@ -839,9 +855,9 @@ static void start_Tx(){
     bits_per_us = 2;
   }
 
-  tx_buf[0] = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[0];
-  tx_buf[1] = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[1];
-  memcpy(&tx_buf[2], &((uint8_t*)NRF_RADIO_regs.PACKETPTR)[2 + S1Offset], payload_len);
+  tx_buf[0] = packet_ptr[0];
+  tx_buf[1] = packet_ptr[1];
+  memcpy(&tx_buf[2], &(packet_ptr)[2 + S1Offset], payload_len);
   append_crc_ble(tx_buf, 2/*header*/ + payload_len, crc_init);
 
   uint packet_bitlen = 0;
@@ -949,7 +965,7 @@ static void handle_Rx_response(int ret){
       NRF_RADIO_regs.CRCSTATUS = 1;
     }
 
-    nrf_ccm_radio_received_packet(!ongoing_rx_RADIO_status.CRC_OK);
+    //nrf_ccm_radio_received_packet(!ongoing_rx_RADIO_status.CRC_OK);
 
   }
 
@@ -1201,7 +1217,7 @@ void nrf_radio_regw_sideeffects_BCC() {
   Timer_RADIO_bitcounter = Time_BitCounterStarted + NRF_RADIO_regs.BCC/bits_per_us;
   if (Timer_RADIO_bitcounter < tm_get_hw_time()) {
     bs_trace_warning_line_time("NRF_RADIO: Reprogrammed bitcounter with a BCC which has already"
-        "passed (%"PRItime") => we ignore it\n",
+        "passed %PRItime => we ignore it\n",
         Timer_RADIO_bitcounter);
     Timer_RADIO_bitcounter = TIME_NEVER;
   }

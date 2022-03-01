@@ -80,7 +80,7 @@ typedef struct {
 static const ppi_tasks_table_t ppi_tasks_table[]={ //just the ones we may use
     //POWER CLOCK:
     //{ (void*)&NRF_CLOCK_regs.TASKS_LFCLKSTART , nrf_clock_TASKS_LFCLKSTART},
-    { (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTART , nrf_clock_TASKS_HFCLKSTART},
+    //{ (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTART , nrf_clock_TASKS_HFCLKSTART},
     //{ (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTOP , nrf_clock_TASKS_HFCLKSTOP},
 
     //RADIO:
@@ -162,17 +162,17 @@ static const ppi_tasks_table_t ppi_tasks_table[]={ //just the ones we may use
     //{ (void*)&(NRF_RTC_regs[2]).TASKS_STOP , nrf_rtc2_TASKS_STOP},
 
     //RNG:
-    { (void*)&NRF_RNG_regs.TASKS_START, nrf_rng_task_start},
-    { (void*)&NRF_RNG_regs.TASKS_STOP , nrf_rng_task_stop},
+    //{ (void*)&NRF_RNG_regs.TASKS_START, nrf_rng_task_start},
+    //{ (void*)&NRF_RNG_regs.TASKS_STOP , nrf_rng_task_stop},
 
 
     //ECB
 
     //AAR
-    { (void*)&NRF_AAR_regs.TASKS_START , nrf_aar_TASK_START},
+    //{ (void*)&NRF_AAR_regs.TASKS_START , nrf_aar_TASK_START},
 
     //CCM
-    { (void*)&NRF_CCM_regs.TASKS_CRYPT , nrf_ccm_TASK_CRYPT},
+    //{ (void*)&NRF_CCM_regs.TASKS_CRYPT , nrf_ccm_TASK_CRYPT},
 
     //PPI:
     { (void*)&NRF_PPI_regs.TASKS_CHG[0].EN,  nrf_ppi_TASK_CHG0_EN},
@@ -233,8 +233,8 @@ static const ppi_event_table_t ppi_events_table[] = { //better keep same order a
     //    {TIMER2_EVENTS_COMPARE_5, &NRF_TIMER_regs[2].EVENTS_COMPARE[5]},
 
     //{RTC0_EVENTS_COMPARE_0, &NRF_RTC_regs[0].EVENTS_COMPARE[0]},
-    {RTC0_EVENTS_COMPARE_1, &NRF_RTC_regs[0].EVENTS_COMPARE[1]},
-    {RTC0_EVENTS_COMPARE_2, &NRF_RTC_regs[0].EVENTS_COMPARE[2]},
+    //{RTC0_EVENTS_COMPARE_1, &NRF_RTC_regs[0].EVENTS_COMPARE[1]},
+    //{RTC0_EVENTS_COMPARE_2, &NRF_RTC_regs[0].EVENTS_COMPARE[2]},
 
     //    {TIMER3_EVENTS_COMPARE_0, &NRF_TIMER_regs[3].EVENTS_COMPARE[0]},
     //    {TIMER3_EVENTS_COMPARE_1, &NRF_TIMER_regs[3].EVENTS_COMPARE[1]},
@@ -258,7 +258,7 @@ static const ppi_event_table_t ppi_events_table[] = { //better keep same order a
 
 static void set_fixed_channel_routes(){
   //TODO: add handler function pointers as we add those functions while modelling the different parts
-
+#if 0
   //Set the fixed channels configuration:
   //  20 TIMER0->EVENTS_COMPARE[0] RADIO->TASKS_TXEN
     ppi_evt_to_ch[TIMER0_EVENTS_COMPARE_0].channels_mask |= ( 1 << 20 );
@@ -307,6 +307,7 @@ static void set_fixed_channel_routes(){
   //  31 RTC0->EVENTS_COMPARE[0] TIMER0->TASKS_START
     ppi_evt_to_ch[RTC0_EVENTS_COMPARE_0].channels_mask |= ( 1 << 31 );
     ppi_ch_tasks[31].tep_f = nrf_timer0_TASK_START; //TIMER0->TASKS_START
+#endif
 }
 
 /**
