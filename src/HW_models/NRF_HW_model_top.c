@@ -92,8 +92,8 @@ typedef enum {
   CLOCK_LF_timer,
   CLOCK_HF_timer,
   RTC_timer,
-#endif  
   TIMER_timer,
+#endif  
   RADIO_timer,
   RADIO_bitcounter,
   RADIO_abort_reeval_timer,
@@ -111,8 +111,8 @@ static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_tim
     &Timer_CLOCK_LF,
     &Timer_CLOCK_HF,
     &Timer_RTC,
-#endif
     &Timer_TIMERs,
+#endif
     &Timer_RADIO,
     &Timer_RADIO_bitcounter,
     &Timer_RADIO_abort_reeval //This timer should always be the latest in this list (lowest priority)
@@ -128,7 +128,7 @@ static NRF_HW_next_timer_to_trigger_t nrf_hw_next_timer_to_trigger = None;
 void nrf_hw_find_next_timer_to_trigger(){
   bs_time_t new_timer = *Timers[0];
   nrf_hw_next_timer_to_trigger = 0;
-
+  bs_trace_info_line_time(1, "1\n");
   for (uint i = 1; i < NumberOfNRFHWTimers ; i++){
     if ( new_timer > *Timers[i] ) {
       new_timer = *Timers[i];
@@ -136,6 +136,7 @@ void nrf_hw_find_next_timer_to_trigger(){
     }
   }
   if ( new_timer != timer_nrf_main_timer ){
+    bs_trace_info_line_time(1, "new_timer 0x%"PRIx64" timer_nrf_main_timer 0x%"PRIx64"\n", new_timer, timer_nrf_main_timer); 
     timer_nrf_main_timer = new_timer;
     tm_find_next_timer_to_trigger();
   }
@@ -181,11 +182,11 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RTC timer\n");
     nrf_rtc_timer_triggered();
     break;
-#endif
   case TIMER_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: TIMERx timer\n");
     nrf_timer_timer_triggered();
     break;
+#endif
   case RADIO_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RADIO timer\n");
     nrf_radio_timer_triggered();
