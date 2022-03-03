@@ -231,6 +231,7 @@ void nrf_radio_tasks_txen() {
         radio_state);
     return;
   }
+  bs_trace_info_line_time(1, "Radio TXEN %i\n", tm_get_hw_time());
   TIFS_state = TIFS_DISABLE;
   radio_state = TXRU;
   NRF_RADIO_regs.STATE = TXRU;
@@ -325,12 +326,13 @@ void nrf_radio_tasks_disable() {
   }
 
   if ( ( radio_state == TXRU ) || ( radio_state == TXIDLE ) ) {
-    bs_trace_info_line_time(1, "now working?\n");
+    bs_trace_info_line_time(1, "\n");
     radio_state = TXDISABLE;
     TIFS_state = TIFS_DISABLE;
     Timer_RADIO = tm_get_hw_time() + radio_timings.TX_RD_time;
     nrf_hw_find_next_timer_to_trigger();
   } else if ( ( radio_state == RXRU ) || ( radio_state == RXIDLE ) ) {
+    bs_trace_info_line_time(1, "Radio disabled comming soon?\n");
     radio_state = RXDISABLE;
     TIFS_state = TIFS_DISABLE;
     Timer_RADIO = tm_get_hw_time() + radio_timings.RX_RD_time;

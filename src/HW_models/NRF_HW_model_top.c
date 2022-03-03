@@ -33,8 +33,8 @@ void nrf_hw_models_free_all(){
   //nrf_aar_clean_up();
   nrf_radio_clean_up();
  // nrf_ficr_clean_up();
- // nrf_ppi_clean_up();
- // nrf_timer_clean_up();
+  nrf_ppi_clean_up();
+  nrf_timer_clean_up();
 }
 
 /*
@@ -60,7 +60,7 @@ void nrf_hw_initialize(nrf_hw_sub_args_t *args){
   //nrf_aar_init();
   nrf_radio_init();
   //nrf_ficr_init();
-  //nrf_ppi_init();
+  nrf_ppi_init();
   nrf_timer_init();
   //nrf_hw_find_next_timer_to_trigger();
 }
@@ -92,8 +92,8 @@ typedef enum {
   CLOCK_LF_timer,
   CLOCK_HF_timer,
   RTC_timer,
-  TIMER_timer,
 #endif  
+  TIMER_timer,
   RADIO_timer,
   RADIO_bitcounter,
   RADIO_abort_reeval_timer,
@@ -111,8 +111,8 @@ static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_tim
     &Timer_CLOCK_LF,
     &Timer_CLOCK_HF,
     &Timer_RTC,
-    &Timer_TIMERs,
 #endif
+    &Timer_TIMERs,
     &Timer_RADIO,
     &Timer_RADIO_bitcounter,
     &Timer_RADIO_abort_reeval //This timer should always be the latest in this list (lowest priority)
@@ -128,7 +128,7 @@ static NRF_HW_next_timer_to_trigger_t nrf_hw_next_timer_to_trigger = None;
 void nrf_hw_find_next_timer_to_trigger(){
   bs_time_t new_timer = *Timers[0];
   nrf_hw_next_timer_to_trigger = 0;
-  bs_trace_info_line_time(1, "1\n");
+
   for (uint i = 1; i < NumberOfNRFHWTimers ; i++){
     if ( new_timer > *Timers[i] ) {
       new_timer = *Timers[i];
@@ -136,7 +136,6 @@ void nrf_hw_find_next_timer_to_trigger(){
     }
   }
   if ( new_timer != timer_nrf_main_timer ){
-    bs_trace_info_line_time(1, "new_timer 0x%"PRIx64" timer_nrf_main_timer 0x%"PRIx64"\n", new_timer, timer_nrf_main_timer); 
     timer_nrf_main_timer = new_timer;
     tm_find_next_timer_to_trigger();
   }
@@ -182,11 +181,12 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RTC timer\n");
     nrf_rtc_timer_triggered();
     break;
+#endif
   case TIMER_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: TIMERx timer\n");
     nrf_timer_timer_triggered();
     break;
-#endif
+
   case RADIO_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RADIO timer\n");
     nrf_radio_timer_triggered();

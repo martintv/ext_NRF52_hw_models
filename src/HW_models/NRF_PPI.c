@@ -258,7 +258,7 @@ static const ppi_event_table_t ppi_events_table[] = { //better keep same order a
 
 static void set_fixed_channel_routes(){
   //TODO: add handler function pointers as we add those functions while modelling the different parts
-#if 0
+
   //Set the fixed channels configuration:
   //  20 TIMER0->EVENTS_COMPARE[0] RADIO->TASKS_TXEN
     ppi_evt_to_ch[TIMER0_EVENTS_COMPARE_0].channels_mask |= ( 1 << 20 );
@@ -271,7 +271,8 @@ static void set_fixed_channel_routes(){
   //  22 TIMER0->EVENTS_COMPARE[1] RADIO->TASKS_DISABLE
     ppi_evt_to_ch[TIMER0_EVENTS_COMPARE_1].channels_mask |= ( 1 << 22 );
     ppi_ch_tasks[22].tep_f = nrf_radio_tasks_disable; //RADIO->TASKS_DISABLE
-
+#if 0 
+matv, not implemented yet
   //  23 RADIO->EVENTS_BCMATCH AAR->TASKS_START
     ppi_evt_to_ch[RADIO_EVENTS_BCMATCH].channels_mask |= ( 1 << 23 );
     ppi_ch_tasks[23].tep_f = nrf_aar_TASK_START; //AAR->TASKS_START
@@ -283,7 +284,7 @@ static void set_fixed_channel_routes(){
   //  25 RADIO->EVENTS_ADDRESS CCM->TASKS_CRYPT
     ppi_evt_to_ch[RADIO_EVENTS_ADDRESS].channels_mask |= ( 1 << 25 );
     ppi_ch_tasks[25].tep_f = nrf_ccm_TASK_CRYPT; //CCM->TASKS_CRYPT
-
+#endif 
   //  26 RADIO->EVENTS_ADDRESS TIMER0->TASKS_CAPTURE[1]
     ppi_evt_to_ch[RADIO_EVENTS_ADDRESS].channels_mask |= ( 1 << 26 );
     ppi_ch_tasks[26].tep_f = nrf_timer0_TASK_CAPTURE_1; //TIMER0->TASKS_CAPTURE[1]
@@ -307,7 +308,6 @@ static void set_fixed_channel_routes(){
   //  31 RTC0->EVENTS_COMPARE[0] TIMER0->TASKS_START
     ppi_evt_to_ch[RTC0_EVENTS_COMPARE_0].channels_mask |= ( 1 << 31 );
     ppi_ch_tasks[31].tep_f = nrf_timer0_TASK_START; //TIMER0->TASKS_START
-#endif
 }
 
 /**
@@ -335,14 +335,18 @@ void nrf_ppi_event(ppi_event_types_t event){
 
   uint32_t ch_mask = ppi_evt_to_ch[event].channels_mask;
   ch_mask &= NRF_PPI_regs.CHEN;
+  bs_trace_info_line_time(1, "ppi %i %x  %x ch_mask%x\n", event, NRF_PPI_regs.CHEN, ppi_evt_to_ch[event].channels_mask, ch_mask);
 
   if ( ch_mask ){
     for ( int ch_nbr = __builtin_ffs(ch_mask) - 1;
           ( ch_mask != 0 ) && ( ch_nbr < NUMBER_PPI_CHANNELS ) ;
           ch_nbr++ ) {
+          bs_trace_info_line_time(1, "%i\n", ch_nbr);
       if ( ch_mask & ( 1 << ch_nbr ) ){
+          bs_trace_info_line_time(1, "%i  %p   %p\n", ch_nbr , ppi_ch_tasks[ch_nbr].tep_f, nrf_radio_tasks_txen);
         ch_mask &= ~( (uint64_t) 1 << ch_nbr );
         if ( ppi_ch_tasks[ch_nbr].tep_f != NULL ){
+          bs_trace_info_line_time(1, " calling\n");
           ppi_ch_tasks[ch_nbr].tep_f();
         }
         if ( ppi_ch_tasks[ch_nbr].fork_tep_f != NULL ){
