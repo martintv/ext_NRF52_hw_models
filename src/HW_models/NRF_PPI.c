@@ -80,7 +80,7 @@ typedef struct {
 static const ppi_tasks_table_t ppi_tasks_table[]={ //just the ones we may use
     //POWER CLOCK:
     //{ (void*)&NRF_CLOCK_regs.TASKS_LFCLKSTART , nrf_clock_TASKS_LFCLKSTART},
-    { (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTART , nrf_clock_TASKS_HFCLKSTART},
+    //{ (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTART , nrf_clock_TASKS_HFCLKSTART},
     //{ (void*)&NRF_CLOCK_regs.TASKS_HFCLKSTOP , nrf_clock_TASKS_HFCLKSTOP},
 
     //RADIO:
@@ -165,17 +165,17 @@ static const ppi_tasks_table_t ppi_tasks_table[]={ //just the ones we may use
     //{ (void*)&(NRF_RTC_regs[2]).TASKS_TRIGOVRFLW , nrf_rtc2_TASKS_TRIGOVRFLW},
 
     //RNG:
-    { (void*)&NRF_RNG_regs.TASKS_START, nrf_rng_task_start},
-    { (void*)&NRF_RNG_regs.TASKS_STOP , nrf_rng_task_stop},
+    //{ (void*)&NRF_RNG_regs.TASKS_START, nrf_rng_task_start},
+    //{ (void*)&NRF_RNG_regs.TASKS_STOP , nrf_rng_task_stop},
 
 
     //ECB
 
     //AAR
-    { (void*)&NRF_AAR_regs.TASKS_START , nrf_aar_TASK_START},
+    //{ (void*)&NRF_AAR_regs.TASKS_START , nrf_aar_TASK_START},
 
     //CCM
-    { (void*)&NRF_CCM_regs.TASKS_CRYPT , nrf_ccm_TASK_CRYPT},
+    //{ (void*)&NRF_CCM_regs.TASKS_CRYPT , nrf_ccm_TASK_CRYPT},
 
     //PPI:
     { (void*)&NRF_PPI_regs.TASKS_CHG[0].EN,  nrf_ppi_TASK_CHG0_EN},
@@ -237,8 +237,8 @@ static const ppi_event_table_t ppi_events_table[] = { //better keep same order a
 
     {RTC0_EVENTS_OVRFLW, &NRF_RTC_regs[0].EVENTS_OVRFLW},
     //{RTC0_EVENTS_COMPARE_0, &NRF_RTC_regs[0].EVENTS_COMPARE[0]},
-    {RTC0_EVENTS_COMPARE_1, &NRF_RTC_regs[0].EVENTS_COMPARE[1]},
-    {RTC0_EVENTS_COMPARE_2, &NRF_RTC_regs[0].EVENTS_COMPARE[2]},
+    //{RTC0_EVENTS_COMPARE_1, &NRF_RTC_regs[0].EVENTS_COMPARE[1]},
+    //{RTC0_EVENTS_COMPARE_2, &NRF_RTC_regs[0].EVENTS_COMPARE[2]},
 
     //    {TIMER3_EVENTS_COMPARE_0, &NRF_TIMER_regs[3].EVENTS_COMPARE[0]},
     //    {TIMER3_EVENTS_COMPARE_1, &NRF_TIMER_regs[3].EVENTS_COMPARE[1]},
@@ -275,7 +275,8 @@ static void set_fixed_channel_routes(){
   //  22 TIMER0->EVENTS_COMPARE[1] RADIO->TASKS_DISABLE
     ppi_evt_to_ch[TIMER0_EVENTS_COMPARE_1].channels_mask |= ( 1 << 22 );
     ppi_ch_tasks[22].tep_f = nrf_radio_tasks_disable; //RADIO->TASKS_DISABLE
-
+#if 0 
+matv, not implemented yet
   //  23 RADIO->EVENTS_BCMATCH AAR->TASKS_START
     ppi_evt_to_ch[RADIO_EVENTS_BCMATCH].channels_mask |= ( 1 << 23 );
     ppi_ch_tasks[23].tep_f = nrf_aar_TASK_START; //AAR->TASKS_START
@@ -287,7 +288,7 @@ static void set_fixed_channel_routes(){
   //  25 RADIO->EVENTS_ADDRESS CCM->TASKS_CRYPT
     ppi_evt_to_ch[RADIO_EVENTS_ADDRESS].channels_mask |= ( 1 << 25 );
     ppi_ch_tasks[25].tep_f = nrf_ccm_TASK_CRYPT; //CCM->TASKS_CRYPT
-
+#endif 
   //  26 RADIO->EVENTS_ADDRESS TIMER0->TASKS_CAPTURE[1]
     ppi_evt_to_ch[RADIO_EVENTS_ADDRESS].channels_mask |= ( 1 << 26 );
     ppi_ch_tasks[26].tep_f = nrf_timer0_TASK_CAPTURE_1; //TIMER0->TASKS_CAPTURE[1]
@@ -338,14 +339,18 @@ void nrf_ppi_event(ppi_event_types_t event){
 
   uint32_t ch_mask = ppi_evt_to_ch[event].channels_mask;
   ch_mask &= NRF_PPI_regs.CHEN;
+  bs_trace_info_line_time(1, "ppi %i %x  %x ch_mask%x\n", event, NRF_PPI_regs.CHEN, ppi_evt_to_ch[event].channels_mask, ch_mask);
 
   if ( ch_mask ){
     for ( int ch_nbr = __builtin_ffs(ch_mask) - 1;
           ( ch_mask != 0 ) && ( ch_nbr < NUMBER_PPI_CHANNELS ) ;
           ch_nbr++ ) {
+          bs_trace_info_line_time(1, "%i\n", ch_nbr);
       if ( ch_mask & ( 1 << ch_nbr ) ){
+          bs_trace_info_line_time(1, "%i  %p   %p\n", ch_nbr , ppi_ch_tasks[ch_nbr].tep_f, nrf_radio_tasks_txen);
         ch_mask &= ~( (uint64_t) 1 << ch_nbr );
         if ( ppi_ch_tasks[ch_nbr].tep_f != NULL ){
+          bs_trace_info_line_time(1, " calling\n");
           ppi_ch_tasks[ch_nbr].tep_f();
         }
         if ( ppi_ch_tasks[ch_nbr].fork_tep_f != NULL ){

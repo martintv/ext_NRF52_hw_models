@@ -231,6 +231,7 @@ void nrf_radio_tasks_txen() {
         radio_state);
     return;
   }
+  bs_trace_info_line_time(1, "Radio TXEN %i\n", tm_get_hw_time());
   TIFS_state = TIFS_DISABLE;
   radio_state = TXRU;
   NRF_RADIO_regs.STATE = TXRU;
@@ -272,6 +273,7 @@ static void abort_if_needed(){
 }
 
 void nrf_radio_tasks_start () {
+  bs_trace_info_line_time(1, "Starting\n");
   if ( radio_state == TXIDLE ) {
     start_Tx();
   } else if ( radio_state == RXIDLE ) {
@@ -328,12 +330,14 @@ void nrf_radio_tasks_disable() {
   }
 
   if ( ( radio_state == TXRU ) || ( radio_state == TXIDLE ) ) {
+    bs_trace_info_line_time(1, "\n");
     radio_state = TXDISABLE;
     NRF_RADIO_regs.STATE = TXDISABLE;
     TIFS_state = TIFS_DISABLE;
     Timer_RADIO = tm_get_hw_time() + radio_timings.TX_RD_time;
     nrf_hw_find_next_timer_to_trigger();
   } else if ( ( radio_state == RXRU ) || ( radio_state == RXIDLE ) ) {
+    bs_trace_info_line_time(1, "Radio disabled comming soon?\n");
     radio_state = RXDISABLE;
     NRF_RADIO_regs.STATE = RXDISABLE;
     TIFS_state = TIFS_DISABLE;
@@ -518,6 +522,7 @@ static void signal_END(){
   nrf_ppi_event(RADIO_EVENTS_END);
 
   if ( NRF_RADIO_regs.SHORTS & RADIO_SHORTS_END_DISABLE_Msk ) {
+    bs_trace_info_line_time(1, "END to disable short\n");
     nrf_radio_tasks_disable();
   }
   if ( NRF_RADIO_regs.SHORTS & RADIO_SHORTS_END_START_Msk ) {
@@ -543,6 +548,8 @@ static void signal_DISABLED(){
       if ( Timer_RADIO < tm_get_hw_time() ){
         bs_trace_warning_line_time("NRF_RADIO: TIFS Ups: The Ramp down from Rx into a Tx takes more than the programmed TIFS time\n");
       }
+      bs_trace_info_line_time(1, "1\n");
+
       nrf_hw_find_next_timer_to_trigger();
     }
   }
@@ -550,6 +557,7 @@ static void signal_DISABLED(){
     if ( TIFS_state == TIFS_WAITING_FOR_DISABLE ) {
       TIFS_state = TIFS_TRIGGERING_TRX_EN;
       Timer_RADIO = Timer_TIFS;
+      bs_trace_info_line_time(1, "1\n");
       if ( Timer_RADIO < tm_get_hw_time() ){
         bs_trace_warning_line_time("NRF_RADIO: TIFS Ups 2\n");
       }
@@ -587,8 +595,9 @@ void maybe_prepare_TIFS(bool Tx_Not_Rx){
 }
 
 void nrf_radio_timer_triggered(){
-
+  bs_trace_info_line_time(1, "radio timer triggered\n");
   if ( radio_state == TXRU ){
+    bs_trace_info_line_time(1, "txru\n");
     radio_state = TXIDLE;
     NRF_RADIO_regs.STATE = TXIDLE;
     Timer_RADIO = TIME_NEVER;
@@ -596,6 +605,7 @@ void nrf_radio_timer_triggered(){
     signal_READY();
     //signal_TXREADY();
   } else if ( radio_state == RXRU ){
+    bs_trace_info_line_time(1, "rxru\n");
     radio_state = RXIDLE;
     NRF_RADIO_regs.STATE = RXIDLE;
     Timer_RADIO = TIME_NEVER;
@@ -603,15 +613,19 @@ void nrf_radio_timer_triggered(){
     signal_READY();
     //signal_RXREADY();
   } else if ( radio_state == TX ){
+    bs_trace_info_line_time(1, "TX\n");
     if ( radio_sub_state == TX_WAIT_FOR_ADDRESS_END ){
+      bs_trace_info_line_time(1, "TX_WAIT_FOR_ADDRESS_END\n");
       radio_sub_state = TX_WAIT_FOR_PAYLOAD_END;
       Timer_RADIO = TX_PAYLOAD_end_time;
       signal_ADDRESS();
     } else if ( radio_sub_state == TX_WAIT_FOR_PAYLOAD_END ) {
+      bs_trace_info_line_time(1, "TX_WAIT_FOR_PAYLOAD_END\n");
       radio_sub_state = TX_WAIT_FOR_CRC_END;
       Timer_RADIO = TX_CRC_end_time;
       signal_PAYLOAD();
     } else if ( radio_sub_state == TX_WAIT_FOR_CRC_END ) {
+      bs_trace_info_line_time(1, "TX_WAIT_FOR_CRC_END\n");
       radio_sub_state = SUB_STATE_INVALID;
       radio_state = TXIDLE;
       NRF_RADIO_regs.STATE = TXIDLE;
@@ -623,6 +637,7 @@ void nrf_radio_timer_triggered(){
     }
     nrf_hw_find_next_timer_to_trigger();
   } else if ( radio_state == RX ){
+    bs_trace_info_line_time(1, "RX\n"); 
     if ( radio_sub_state == RX_WAIT_FOR_ADDRESS_END ) {
       Timer_RADIO = TIME_NEVER;
       nrf_hw_find_next_timer_to_trigger();
@@ -653,19 +668,23 @@ void nrf_radio_timer_triggered(){
       bs_trace_error_time_line("programming error\n");
     }
   } else if ( radio_state == TXDISABLE ){
+    bs_trace_info_line_time(1, "TXDISABLE\n"); 
     radio_state = DISABLED;
     NRF_RADIO_regs.STATE = DISABLED;
     Timer_RADIO = TIME_NEVER;
     signal_DISABLED();
-    nrf_hw_find_next_timer_to_trigger();
+    //nrf_hw_find_next_timer_to_trigger(); this is a bug in bablesim isnt it?  we didnt update our timer here? signal_DISABLED might have, but it nrf_hw_find_next_timer_to_trigger calls itself
   } else if ( radio_state == RXDISABLE ){
+    bs_trace_info_line_time(1, "RXDISABLE\n"); 
     radio_state = DISABLED;
     NRF_RADIO_regs.STATE = DISABLED;
     Timer_RADIO = TIME_NEVER;
     signal_DISABLED();
-    nrf_hw_find_next_timer_to_trigger();
+    //nrf_hw_find_next_timer_to_trigger(); this is a bug in bablesim isnt it?  we didnt update our timer here? signal_DISABLED might have, but it nrf_hw_find_next_timer_to_trigger calls itself
   } else {
+    bs_trace_info_line_time(1, "ELSE\n"); 
     if ( ( radio_state == DISABLED ) && ( TIFS_state == TIFS_TRIGGERING_TRX_EN ) ) {
+      bs_trace_info_line_time(1, "TIFS"); 
       if ( Timer_RADIO != Timer_TIFS ){
         bs_trace_warning_line_time("NRF_RADIO: TIFS Ups 3\n");
       }
@@ -763,6 +782,18 @@ static void Tx_abort_eval_respond(){
   handle_Tx_response(ret);
 }
 
+uint8_t* memory_on_moddeled_cpu;
+
+void bsim_NRF_RADIO_pointer_to_memory_of_cpu_core(uint8_t* ptr)
+{
+  memory_on_moddeled_cpu = ptr;
+}
+
+static uint8_t* get_64_bit_packet_ptr(void)
+{
+  return memory_on_moddeled_cpu + (NRF_RADIO_regs.PACKETPTR & 0x3FFFF);
+}
+
 static void start_Tx(){
   int S1Offset = 0;
   radio_state = TX;
@@ -818,11 +849,15 @@ static void start_Tx(){
     S1Offset = 1; /*1 byte offset in RAM (S1 length > 8 not supported)*/
   }
 
+  uint8_t * packet_ptr = get_64_bit_packet_ptr();
+  bs_trace_info_line(1, "Addr to send: %"PRId64"x payload: 0x%x 0x%x 0x%x 0x%x 0x%x \n", memory_on_moddeled_cpu, 
+  packet_ptr[0], packet_ptr[1], packet_ptr[2], packet_ptr[3], packet_ptr[4]);
+
   //TOLOW: Add support for other packet formats and bitrates
   uint8_t preamble_len;
   uint8_t address_len = 4;
   uint8_t header_len  = 2;
-  uint8_t payload_len = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[1];
+  uint8_t payload_len = ((uint8_t*)packet_ptr)[1];
   //Note: I assume in Tx the length is always < PCNF1.MAXLEN and that STATLEN is always 0 (otherwise add a check)
   uint8_t crc_len     = 3;
 
@@ -847,9 +882,9 @@ static void start_Tx(){
     bits_per_us = 2;
   }
 
-  tx_buf[0] = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[0];
-  tx_buf[1] = ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[1];
-  memcpy(&tx_buf[2], &((uint8_t*)NRF_RADIO_regs.PACKETPTR)[2 + S1Offset], payload_len);
+  tx_buf[0] = packet_ptr[0];
+  tx_buf[1] = packet_ptr[1];
+  memcpy(&tx_buf[2], &(packet_ptr)[2 + S1Offset], payload_len);
   append_crc_ble(tx_buf, 2/*header*/ + payload_len, crc_init);
 
   uint packet_bitlen = 0;
@@ -909,6 +944,7 @@ static void handle_Rx_response(int ret){
     nrf_hw_find_next_timer_to_trigger();
 
   } else if ( ( ret == P2G4_MSG_RX_ADDRESSFOUND ) && ( radio_state == RX /*if we havent aborted*/ ) ) {
+    bs_trace_info_line_time(1, "Received, lets copy\n");
     bs_time_t address_time = hwll_dev_time_from_phy(ongoing_rx_done.rx_time_stamp); //this is the end of the sync word in air time
     tm_update_last_phy_sync_time(address_time);
 
@@ -929,10 +965,11 @@ static void handle_Rx_response(int ret){
             + ongoing_rx_RADIO_status.CRC_duration); //Provisional value
 
     if (ongoing_rx_done.packet_size >= 5) { /*At least the header and CRC, otherwise better to not try to copy it*/
-      ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[0] = rx_buf[0];
-      ((uint8_t*)NRF_RADIO_regs.PACKETPTR)[1] = rx_buf[1];
+      uint8_t * packet_ptr = get_64_bit_packet_ptr();
+      packet_ptr[0] = rx_buf[0];
+      packet_ptr[1] = rx_buf[1];
       /* We cheat a bit and copy the whole packet already (The AAR block will look in Adv packets after 64 bits)*/
-      memcpy(&((uint8_t*)NRF_RADIO_regs.PACKETPTR)[2 + ongoing_rx_RADIO_status.S1Offset],
+      memcpy(&packet_ptr[2 + ongoing_rx_RADIO_status.S1Offset],
           &rx_buf[2] , length);
     }
 
@@ -959,7 +996,7 @@ static void handle_Rx_response(int ret){
       NRF_RADIO_regs.CRCSTATUS = 1;
     }
 
-    nrf_ccm_radio_received_packet(!ongoing_rx_RADIO_status.CRC_OK);
+    //nrf_ccm_radio_received_packet(!ongoing_rx_RADIO_status.CRC_OK);
 
   }
 
@@ -982,6 +1019,7 @@ static void Rx_abort_eval_respond(){
 }
 
 static void start_Rx(){
+  bs_trace_info_line_time(1, "RX\n");
   radio_state = RX;
   NRF_RADIO_regs.STATE = RX;
 
@@ -1038,19 +1076,23 @@ static void start_Rx(){
   ongoing_rx_done.status = P2G4_RXSTATUS_NOSYNC;
 
   //attempt to receive
+  bs_trace_info_line_time(1, "before rx\n");
   next_recheck_time = abort_ctrl_next_reevaluate_abort_time();
-
+  bs_trace_info_line_time(1, "adter rx\n");
   ongoing_rx.start_time  = hwll_phy_time_from_dev(tm_get_abs_time());
 
   ongoing_rx.abort.abort_time = hwll_phy_time_from_dev(abort_ctrl_next_abort_time());
   ongoing_rx.abort.recheck_time = hwll_phy_time_from_dev(next_recheck_time);
 
   rx_pkt_buffer_ptr = (uint8_t*)&rx_buf;
+
+  bs_trace_info_line_time(1, "before rx\n");
   int ret = p2G4_dev_req_rx_nc_b(&ongoing_rx,
       &ongoing_rx_done,
       &rx_pkt_buffer_ptr,
       _NRF_MAX_PACKET_SIZE);
 
+  bs_trace_info_line_time(1, "after rx\n");
   radio_sub_state = SUB_STATE_INVALID;
   Timer_RADIO = TIME_NEVER;
   nrf_hw_find_next_timer_to_trigger();
@@ -1213,7 +1255,7 @@ void nrf_radio_regw_sideeffects_BCC() {
   Timer_RADIO_bitcounter = Time_BitCounterStarted + NRF_RADIO_regs.BCC/bits_per_us;
   if (Timer_RADIO_bitcounter < tm_get_hw_time()) {
     bs_trace_warning_line_time("NRF_RADIO: Reprogrammed bitcounter with a BCC which has already"
-        "passed (%"PRItime") => we ignore it\n",
+        "passed %PRItime => we ignore it\n",
         Timer_RADIO_bitcounter);
     Timer_RADIO_bitcounter = TIME_NEVER;
   }

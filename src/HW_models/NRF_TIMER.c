@@ -149,6 +149,7 @@ static void update_all_cc_timers(int t){
 }
 
 void nrf_timer_TASK_START(int t){
+  bs_trace_info_line_time(1, "starting timer at time %i\n", tm_get_hw_time());
   //Note: STATUS is missing in NRF_TIMER_Type
   if ( Timer_running[t] == false ) {
     Timer_running[t] = true;
@@ -328,11 +329,12 @@ void nrf_timer_timer_triggered() {
     if ( !(( Timer_running[t] == true ) && ( NRF_TIMER_regs[t].MODE == 0 )) ) {
       continue;
     }
+    bs_trace_info_line_time(1, "timer\n");
     for ( int cc = 0 ; cc < N_CC ; cc++) {
       if ( CC_timers[t][cc] != Timer_TIMERs ){ //This CC is not matching now
         continue;
       }
-
+      bs_trace_info_line_time(1, "timer\n");
       update_cc_timer(t,cc); //Next time it will match
 
       if ( NRF_TIMER_regs[t].SHORTS & (TIMER_SHORTS_COMPARE0_CLEAR_Msk << cc) ) {
@@ -363,7 +365,7 @@ void nrf_timer_timer_triggered() {
         event_cc = TIMER4_EVENTS_COMPARE_0;
         break;
       }
-
+      bs_trace_info_line_time(1, "timer\n");
       nrf_ppi_event(event_cc + cc);
 
       if ( TIMER_INTEN[t] & (TIMER_INTENSET_COMPARE0_Msk << cc) ){
