@@ -25,7 +25,7 @@
 #include "fake_timer.h"
 
 void nrf_hw_models_free_all(){
-  //nrf_clock_clean_up();
+  nrf_clock_clean_up();
   //nrf_rng_clean_up();
   nrf_rtc_clean_up();
   //nrf_aes_ecb_clean_up();
@@ -52,7 +52,7 @@ void nrf_hw_initialize(nrf_hw_sub_args_t *args){
 
   //BLECrypt_if_enable_real_encryption(args->useRealAES);
   hw_irq_ctrl_init();
-  //nrf_clock_init();
+  nrf_clock_init();
   //nrg_rng_init();
   nrf_rtc_init();
   //nrf_aes_ecb_init();
@@ -89,9 +89,9 @@ typedef enum {
   RNG_timer,
   ECB_timer,
   AAR_timer,
+#endif
   CLOCK_LF_timer,
   CLOCK_HF_timer,
-#endif  
   RTC_timer,
   TIMER_timer,
   RADIO_timer,
@@ -108,9 +108,9 @@ static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_tim
     &Timer_RNG,
     &Timer_ECB,
     &Timer_AAR,
+#endif
     &Timer_CLOCK_LF,
     &Timer_CLOCK_HF,
-#endif
     &Timer_RTC,
     &Timer_TIMERs,
     &Timer_RADIO,
@@ -169,6 +169,7 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: AAR timer\n");
     nrf_aar_timer_triggered();
     break;
+#endif
   case CLOCK_LF_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: CLOCK LF timer\n");
     nrf_clock_LFTimer_triggered();
@@ -177,7 +178,6 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: CLOCK HF timer\n");
     nrf_clock_HFTimer_triggered();
     break;
-#endif
   case RTC_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RTC timer\n");
     nrf_rtc_timer_triggered();
