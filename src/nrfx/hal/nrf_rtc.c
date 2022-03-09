@@ -18,6 +18,8 @@ void nrf_rtc_cc_set(NRF_RTC_Type * p_reg, uint32_t ch, uint32_t cc_val)
 {
   p_reg->CC[ch] = cc_val;
   int i = rtc_number_from_ptr(p_reg);
+
+  bs_trace_info_line_time(1, "%i, %i %i\n", i, ch, cc_val);
   nrf_rtc_regw_sideeffects_CC(i, ch);
 }
 

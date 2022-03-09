@@ -27,7 +27,7 @@
 void nrf_hw_models_free_all(){
   //nrf_clock_clean_up();
   //nrf_rng_clean_up();
-  //nrf_rtc_clean_up();
+  nrf_rtc_clean_up();
   //nrf_aes_ecb_clean_up();
   //nrf_aes_ccm_clean_up();
   //nrf_aar_clean_up();
@@ -54,7 +54,7 @@ void nrf_hw_initialize(nrf_hw_sub_args_t *args){
   hw_irq_ctrl_init();
   //nrf_clock_init();
   //nrg_rng_init();
-  //nrf_rtc_init();
+  nrf_rtc_init();
   //nrf_aes_ecb_init();
   //nrf_aes_ccm_init();
   //nrf_aar_init();
@@ -91,8 +91,8 @@ typedef enum {
   AAR_timer,
   CLOCK_LF_timer,
   CLOCK_HF_timer,
-  RTC_timer,
 #endif  
+  RTC_timer,
   TIMER_timer,
   RADIO_timer,
   RADIO_bitcounter,
@@ -110,8 +110,8 @@ static bs_time_t *Timers[NumberOfNRFHWTimers] = { //Indexed with NRF_HW_next_tim
     &Timer_AAR,
     &Timer_CLOCK_LF,
     &Timer_CLOCK_HF,
-    &Timer_RTC,
 #endif
+    &Timer_RTC,
     &Timer_TIMERs,
     &Timer_RADIO,
     &Timer_RADIO_bitcounter,
@@ -177,11 +177,11 @@ void nrf_hw_some_timer_reached() {
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: CLOCK HF timer\n");
     nrf_clock_HFTimer_triggered();
     break;
+#endif
   case RTC_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: RTC timer\n");
     nrf_rtc_timer_triggered();
     break;
-#endif
   case TIMER_timer:
     bs_trace_raw_manual_time(8, tm_get_abs_time(),"NRF HW: TIMERx timer\n");
     nrf_timer_timer_triggered();

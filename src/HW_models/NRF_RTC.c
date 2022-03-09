@@ -228,6 +228,7 @@ void nrf_rtc_timer_triggered() {
     NRF_RTC_Type *RTC_regs = &NRF_RTC_regs[rtc];
 
     uint32_t mask = RTC_EVTEN_COMPARE0_Msk;
+    bs_trace_info_line_time(1, "\n");
 
     for ( int cc = 0 ; cc < N_CC ; cc++, event++, mask <<=1) {
       if ( cc_timers[rtc][cc] == Timer_RTC ){ //This CC is matching now
