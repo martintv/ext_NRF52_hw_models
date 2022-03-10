@@ -29,7 +29,7 @@ void nrf_hw_models_free_all(){
   //nrf_rng_clean_up();
   nrf_rtc_clean_up();
   //nrf_aes_ecb_clean_up();
-  //nrf_aes_ccm_clean_up();
+  nrf_aes_ccm_clean_up();
   //nrf_aar_clean_up();
   nrf_radio_clean_up();
  // nrf_ficr_clean_up();
@@ -56,7 +56,7 @@ void nrf_hw_initialize(nrf_hw_sub_args_t *args){
   //nrg_rng_init();
   nrf_rtc_init();
   //nrf_aes_ecb_init();
-  //nrf_aes_ccm_init();
+  nrf_aes_ccm_init();
   //nrf_aar_init();
   nrf_radio_init();
   //nrf_ficr_init();

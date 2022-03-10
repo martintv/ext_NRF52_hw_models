@@ -418,6 +418,7 @@ void nrf_radio_regw_sideeffects_POWER(){
 
 static void signal_READY(){
   NRF_RADIO_regs.EVENTS_READY = 1;
+  bs_trace_info_line_time(1, "READYYYYY\n");
   nrf_ppi_event(RADIO_EVENTS_READY);
 
   if ( NRF_RADIO_regs.SHORTS & RADIO_SHORTS_READY_START_Msk ) {
@@ -467,6 +468,7 @@ static void signal_RSSIEND(){
 }
 
 static void signal_ADDRESS(){
+  bs_trace_info_line_time(1, "SIGNAL ADDRESSSSS\n");
   NRF_RADIO_regs.EVENTS_ADDRESS = 1;
   nrf_ppi_event(RADIO_EVENTS_ADDRESS);
 
@@ -542,7 +544,6 @@ static void signal_DISABLED(){
       if ( Timer_RADIO < tm_get_hw_time() ){
         bs_trace_warning_line_time("NRF_RADIO: TIFS Ups: The Ramp down from Rx into a Tx takes more than the programmed TIFS time\n");
       }
-      bs_trace_info_line_time(1, "1\n");
 
       nrf_hw_find_next_timer_to_trigger();
     }
@@ -551,7 +552,6 @@ static void signal_DISABLED(){
     if ( TIFS_state == TIFS_WAITING_FOR_DISABLE ) {
       TIFS_state = TIFS_TRIGGERING_TRX_EN;
       Timer_RADIO = Timer_TIFS;
-      bs_trace_info_line_time(1, "1\n");
       if ( Timer_RADIO < tm_get_hw_time() ){
         bs_trace_warning_line_time("NRF_RADIO: TIFS Ups 2\n");
       }
@@ -589,7 +589,6 @@ void maybe_prepare_TIFS(bool Tx_Not_Rx){
 }
 
 void nrf_radio_timer_triggered(){
-  bs_trace_info_line_time(1, "radio timer triggered\n");
   if ( radio_state == TXRU ){
     bs_trace_info_line_time(1, "txru\n");
     radio_state = TXIDLE;

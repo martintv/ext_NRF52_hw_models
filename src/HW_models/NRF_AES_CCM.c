@@ -83,7 +83,7 @@ static void nonce_calc(
   memcpy(&ccm_nonce[NONCE_LEN - IV_LEN], iv, IV_LEN);
 }
 
-
+extern uint8_t* memory_on_moddeled_cpu;
 static void nrf_ccm_encrypt_tx() {
   const uint8_t* cnfptr;
   const uint8_t* sk;
@@ -95,13 +95,13 @@ static void nrf_ccm_encrypt_tx() {
   int length;
   uint8_t ccm_nonce[NONCE_LEN];
 
-  cnfptr = (const uint8_t*)NRF_CCM_regs.CNFPTR;
+  cnfptr = memory_on_moddeled_cpu  + (NRF_CCM_regs.CNFPTR  & 0x3FFFF);
   sk = cnfptr;
   tx_pkt_ctr = *(uint64_t*)(cnfptr + 16) & 0x7FFFFFFFFFULL;
   iv = &cnfptr[25];
 
-  inptr = (const uint8_t*)NRF_CCM_regs.INPTR;
-  outptr =  (uint8_t*)NRF_CCM_regs.OUTPTR;
+  inptr = memory_on_moddeled_cpu  + (NRF_CCM_regs.INPTR  & 0x3FFFF);
+  outptr = memory_on_moddeled_cpu + (NRF_CCM_regs.OUTPTR & 0x3FFFF);
 
   length = inptr[1];
   if (length > 0) {
@@ -113,6 +113,7 @@ static void nrf_ccm_encrypt_tx() {
   /* Note that outptr[2] is reserverd for S1 in the HW (but unused) */
 
   nonce_calc(iv, tx_pkt_ctr, pkt_direction, ccm_nonce);
+
 
   BLECrypt_if_encrypt_packet(inptr[0], // First byte of packet header
       (uint8_t*)&inptr[3],      // Packet payload to be encrypted
@@ -144,13 +145,13 @@ static void nrf_ccm_decrypt_rx(bool crc_error) {
     return;
   }
 
-  cnfptr = (const uint8_t*)NRF_CCM_regs.CNFPTR;
+  cnfptr = memory_on_moddeled_cpu  + (NRF_CCM_regs.CNFPTR  & 0x3FFFF);
   sk = cnfptr;
   rx_pkt_ctr = *(uint64_t*)(cnfptr + 16) & 0x7FFFFFFFFFULL;
   iv = &cnfptr[25];
 
-  inptr = (const uint8_t*)NRF_CCM_regs.INPTR;
-  outptr = (uint8_t*)NRF_CCM_regs.OUTPTR;
+  inptr = memory_on_moddeled_cpu  + (NRF_CCM_regs.INPTR  & 0x3FFFF);
+  outptr = memory_on_moddeled_cpu + (NRF_CCM_regs.OUTPTR & 0x3FFFF);
 
   length = inptr[1];
   if (length > 4) {
@@ -179,6 +180,7 @@ static void nrf_ccm_decrypt_rx(bool crc_error) {
 }
 
 static void signal_EVENTS_ENDKSGEN() {
+
   NRF_CCM_regs.EVENTS_ENDKSGEN = 1;
   nrf_ppi_event(CCM_EVENTS_ENDKSGEN);
 
@@ -218,6 +220,7 @@ void nrf_ccm_TASK_KSGEN() {
 }
 
 void nrf_ccm_TASK_CRYPT() {
+
   if (NRF_CCM_regs.ENABLE != CCM_ENABLE_ENABLE_Enabled) {
     return;
   }
